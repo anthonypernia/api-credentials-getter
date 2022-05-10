@@ -1,16 +1,15 @@
 let mongoDbConnector = require('../../../db/mongo_db_connector');
 const bcrypt = require("bcrypt");
-const { ObjectId } = require('mongodb');
-const { use } = require('bcrypt/promises');
 
 class AuthenticatorService {
 
     async insertUser(data){   
-        let response = await mongoDbConnector.get_only_usernames();
-        for (let username of response) {
-            if (username.username === data.username) {
-                return false;
-            }
+        let exists = await mongoDbConnector.usernameExists(data.username);
+        if (exists) {
+            return {
+                status: false,
+                message: 'Username already exists'
+            };
         }
         let user = {
             username: data.username,
@@ -18,18 +17,27 @@ class AuthenticatorService {
             data_credentials: data.data_credentials
         }
         await mongoDbConnector.insert(user);
-        return true;
+        return {
+            status: true,
+            message: 'User created successfully'
+        }
     }
 
     async login(username, password) {
         let users = await mongoDbConnector.getUserInfo(username);
         if (users.length === 0) {
-            return false;
+            return {
+                status: false,
+                message: 'Username does not exist'
+            }
         }else{
             if (bcrypt.compareSync(password, users[0].password)) {
-                return users[0].data_credentials
+                return users[0].data
             }
-            return false;
+            return {
+                status: false,
+                message: 'Password is incorrect'
+            };
         }
     }
 }

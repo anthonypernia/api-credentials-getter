@@ -1,5 +1,5 @@
 
-const { MongoClient, ObjectId } = require('mongodb');
+const { MongoClient } = require('mongodb');
 const { db } = require('../config/index');
 
 class MongoDbConnector {
@@ -24,10 +24,13 @@ class MongoDbConnector {
         return result;
     }
 
-    async get_only_usernames() {
+    async usernameExists(username) {
         const collection = this.db.collection(db.collection_name);
-        const result = await collection.find({}, { projection: { username: 1, _id: 0 } }).toArray();
-        return result;
+        const result = await collection.find({ username }).toArray();
+        if (result.length === 0) {
+            return false;
+        } 
+        return true;
     }
 
 
@@ -36,6 +39,8 @@ class MongoDbConnector {
         const result = await collection.insertOne(data);
         return result;
     }
+
+    
 }
 
 module.exports = new MongoDbConnector();
